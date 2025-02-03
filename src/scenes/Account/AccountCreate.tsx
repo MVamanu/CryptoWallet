@@ -452,6 +452,18 @@ function AccountCreate() {
                   </div>
                 </div>
               )}
+
+              {/* Footer cu stil */}
+              <div className="text-center mt-4">
+                <hr className="my-4" />
+                <p className="text-muted mb-0" style={{ 
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  letterSpacing: '0.5px'
+                }}>
+                  Made with ❤️ by Zorbu
+                </p>
+              </div>
             </div>
           </div>
         </div>
