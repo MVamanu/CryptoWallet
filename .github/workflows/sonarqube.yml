@@ -30,7 +30,7 @@ jobs:
         run: |
           sonar-scanner \
             -Dsonar.organization=MVamanu \
-            -Dsonar.projectKey=MVamanu/CryptoWallet \
+            -Dsonar.projectKey=MVamanu_CryptoWallet \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.sources=src \
             -Dsonar.language=TypeScript \
