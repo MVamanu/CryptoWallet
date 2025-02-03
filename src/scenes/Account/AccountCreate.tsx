@@ -169,6 +169,13 @@ function AccountCreate() {
     }
   }
 
+  const getCurrentAccount = useCallback(() => {
+    if (currentAccountId && accounts.length > 0) {
+      return accounts.find(acc => acc.id === currentAccountId);
+    }
+    return null;
+  }, [currentAccountId, accounts]);
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     const storedUsers = localStorage.getItem(USERS_STORE_KEY);
@@ -181,7 +188,6 @@ function AccountCreate() {
         const hashedInput = await hashPassword(credentials.password);
         
         if (hashedInput === user.passwordHash) {
-          // Load user's accounts
           const storedAccounts = localStorage.getItem(ACCOUNTS_STORE_KEY);
           if (storedAccounts) {
             const accountsStore = JSON.parse(storedAccounts);
@@ -192,13 +198,14 @@ function AccountCreate() {
             if (userAccounts.length > 0) {
               setAccounts(userAccounts);
               const firstAccountId = userAccounts[0].id;
-              
+              setCurrentAccountId(firstAccountId);
+
               // Load first account
-              const privateKey = await decryptAccountData(userAccounts[0].encryptedData);
+              const firstAccount = userAccounts[0];
+              const privateKey = await decryptAccountData(firstAccount.encryptedData);
               const result = await generateAccount(privateKey);
               
               setAccount(result.account);
-              setCurrentAccountId(firstAccountId);
               setIsLoggedIn(true);
               setLoginError('');
             }
