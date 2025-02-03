@@ -1,4 +1,4 @@
-# Wallet
+# Crypto Wallet
 
 A crypto wallet that makes it easy to use the blockchain.
 
@@ -6,6 +6,7 @@ A crypto wallet that makes it easy to use the blockchain.
 2. Restore account
 3. Send ETH
 4. View transactions
+
 
 
 ## Quickstart

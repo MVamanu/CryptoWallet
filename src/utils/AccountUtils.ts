@@ -1,30 +1,54 @@
-import { Wallet } from 'ethers';
+import { ethers } from 'ethers';
 import { Account } from '../models/Account';
 
-export function generateAccount(seedPhrase: string = "", index: number = 0): 
-{ account: Account, seedPhrase: string } {
-  let wallet: Wallet;
+interface AccountGenerationResult {
+  account: Account;
+  mnemonic: string | null;
+}
 
-  // If the seed phrase is not provided, generate a random mnemonic using a CSPRNG
-  if (seedPhrase === "") {
-    seedPhrase = Wallet.createRandom().mnemonic.phrase;
+export async function generateAccount(recoveryPhrase?: string): Promise<AccountGenerationResult> {
+  let wallet: ethers.Wallet;
+  let mnemonic: string | null = null;
+
+  if (recoveryPhrase) {
+    // Check if the recovery phrase is a mnemonic or private key
+    if (recoveryPhrase.split(' ').length > 1) {
+      wallet = ethers.Wallet.fromMnemonic(recoveryPhrase);
+    } else {
+      wallet = new ethers.Wallet(recoveryPhrase);
+    }
+  } else {
+    // Generate a random wallet with mnemonic
+    const randomWallet = ethers.Wallet.createRandom();
+    wallet = randomWallet;
+    mnemonic = randomWallet.mnemonic.phrase;
   }
 
-  // If the seed phrase does not contain spaces, it is likely a mnemonic
-  wallet = (seedPhrase.includes(" ")) ? Wallet.fromMnemonic(seedPhrase, `m/44'/60'/0'/0/${index}`) : 
-  new Wallet(seedPhrase);
+  const account: Account = {
+    privateKey: wallet.privateKey,
+    address: wallet.address,
+    balance: '0',
+  };
 
-  const { address } = wallet;
-  const account = { address, privateKey: wallet.privateKey, balance: "0" };
-  
-  // If the seedphrase does not include spaces then it's actually a private key, so return a blank string.
-  return { account, seedPhrase: seedPhrase.includes(" ")? seedPhrase : "" };
+  return {
+    account,
+    mnemonic
+  };
 }
 
-export function shortenAddress(str: string, numChars: number=4) {
-  return `${str.substring(0, numChars)}...${str.substring(str.length - numChars)}`;
+export function shortenAddress(address: string) {
+  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 }
 
-export function toFixedIfNecessary( value: string, decimalPlaces: number = 2 ){
-  return +parseFloat(value).toFixed( decimalPlaces );
+export function toFixedIfNecessary(value: string, dp: number = 6) {
+  return (+value).toFixed(dp);
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }

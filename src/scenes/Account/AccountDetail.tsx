@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import { sendToken } from '../../utils/TransactionUtils';
-import { goerli } from '../../models/Chain';
+import { sepolia } from '../../models/Chain';
 import { Account } from '../../models/Account';
 import AccountTransactions from './AccountTransactions';
 import { ethers } from 'ethers';
@@ -8,10 +8,12 @@ import { toFixedIfNecessary } from '../../utils/AccountUtils';
 import './Account.css';
 
 interface AccountDetailProps {
-  account: Account
+  account: Account;
+  onLogout: () => void;
+  username: string;
 }
 
-const AccountDetail: React.FC<AccountDetailProps> = ({account}) => {
+const AccountDetail: React.FC<AccountDetailProps> = ({account, onLogout, username}) => {
   const [destinationAddress, setDestinationAddress] = useState('');
   const [amount, setAmount] = useState(0);
   const [balance, setBalance] = useState(account.balance)
@@ -23,12 +25,12 @@ const AccountDetail: React.FC<AccountDetailProps> = ({account}) => {
 
   useEffect(() => {
     const fetchData = async () => {
-        const provider = new ethers.providers.JsonRpcProvider(goerli.rpcUrl);
+        const provider = new ethers.providers.JsonRpcProvider(sepolia.rpcUrl);
         let accountBalance = await provider.getBalance(account.address);
         setBalance((String(toFixedIfNecessary(ethers.utils.formatEther(accountBalance)))));
     }
     fetchData();
-}, [account.address])
+  }, [account.address])
 
   function handleDestinationAddressChange(event: React.ChangeEvent<HTMLInputElement>) {
     setDestinationAddress(event.target.value);
@@ -52,7 +54,7 @@ const AccountDetail: React.FC<AccountDetailProps> = ({account}) => {
         // Set the network response status to "complete" and the message to the transaction hash
         setNetworkResponse({
           status: 'complete',
-          message: <p>Transfer complete! <a href={`${goerli.blockExplorerUrl}/tx/${receipt.transactionHash}`} target="_blank" rel="noreferrer">
+          message: <p>Transfer complete! <a href={`${sepolia.blockExplorerUrl}/tx/${receipt.transactionHash}`} target="_blank" rel="noreferrer">
             View transaction
             </a></p>,
         });
@@ -79,54 +81,76 @@ const AccountDetail: React.FC<AccountDetailProps> = ({account}) => {
   }
 
   return (
-    <div className='AccountDetail container'>
-        <h4>
-            Address: <a href={`https://goerli.etherscan.io/address/${account.address}`} target="_blank" rel="noreferrer">
-            {account.address}
-            </a><br/>
-            Balance: {balance} ETH
-        </h4>
-
-        <div className="form-group">
-            <label>Destination Address:</label>
-            <input
-            className="form-control"
-            type="text"
-            value={destinationAddress}
-            onChange={handleDestinationAddressChange}
-            />
-        </div>
-
-        <div className="form-group">
-            <label>Amount:</label>
-            <input
-            className="form-control"
-            type="number"
-            value={amount}
-            onChange={handleAmountChange}
-            />
-        </div>
-
-        <button
-            className="btn btn-primary"
-            type="button"
-            onClick={transfer}
-            disabled={!amount || networkResponse.status === 'pending'}
+    <div className="account-detail">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h5 className="text-muted mb-0">
+          User: {username}
+        </h5>
+        <button 
+          className="btn btn-outline-danger btn-sm"
+          onClick={onLogout}
         >
-            Send {amount} ETH
+          Logout
         </button>
+      </div>
 
-        {networkResponse.status &&
-            <>
-            {networkResponse.status === 'pending' && <p>Transfer is pending...</p>}
-            {networkResponse.status === 'complete' && <p>{networkResponse.message}</p>}
-            {networkResponse.status === 'error' && <p>Error occurred while transferring tokens: {networkResponse.message}</p>}
-            </>
-        }
+      <div className="account-info">
+        <h4 className="mb-3">
+          <div className="mb-2">
+            Address: <a 
+              href={`${sepolia.blockExplorerUrl}/address/${account.address}`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-break"
+            >
+              {account.address}
+            </a>
+          </div>
+          <div>
+            Balance: {balance} ETH
+          </div>
+        </h4>
+      </div>
 
-        <AccountTransactions account={account} />
+      <div className="form-group">
+        <label>Destination Address:</label>
+        <input
+          className="form-control"
+          type="text"
+          value={destinationAddress}
+          onChange={handleDestinationAddressChange}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Amount:</label>
+        <input
+          className="form-control"
+          type="number"
+          value={amount}
+          onChange={handleAmountChange}
+        />
+      </div>
+
+      <button
+        className="btn btn-primary"
+        type="button"
+        onClick={transfer}
+        disabled={!amount || networkResponse.status === 'pending'}
+      >
+        Send {amount} ETH
+      </button>
+
+      {networkResponse.status &&
+        <>
+          {networkResponse.status === 'pending' && <p>Transfer is pending...</p>}
+          {networkResponse.status === 'complete' && <p>{networkResponse.message}</p>}
+          {networkResponse.status === 'error' && <p>Error occurred while transferring tokens: {networkResponse.message}</p>}
+        </>
+      }
+
+      <AccountTransactions account={account} />
     </div>
-
   )
 }
 
