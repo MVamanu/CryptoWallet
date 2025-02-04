@@ -19,7 +19,12 @@
     "uuid": "^11.0.5",
     "web-vitals": "^2.1.4"
   },
+  "resolutions": {
+    "source-map-js": "^1.0.2",
+    "postcss": "^8.4.31"
+  },
   "scripts": {
+    "preinstall": "npx force-resolutions",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:extension": "craco build",
