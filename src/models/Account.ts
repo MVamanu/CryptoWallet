@@ -1,9 +1,9 @@
 import { sepolia, mainnet } from "./Chain";
 
 export interface Account {
-    privateKey: string,
     address: string,
     balance: string,
+    privateKey: string,
     username?: string,
     passwordHash?: string,
 }
