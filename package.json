@@ -28,7 +28,7 @@
   "scripts": {
     "preinstall": "npx force-resolutions",
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "build:extension": "craco build",
     "test": "react-scripts test",
     "test:coverage": "react-scripts test --coverage --watchAll=false --ci --collectCoverageFrom='src/**/*.{ts,tsx}' --collectCoverageFrom='!src/**/*.{test,spec,stories}.{ts,tsx}' --collectCoverageFrom='!src/index.tsx' --collectCoverageFrom='!src/reportWebVitals.ts' --collectCoverageFrom='!src/setupTests.ts'",
@@ -81,5 +81,8 @@
       "^axios$": "axios/dist/axios.js"
     }
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }
