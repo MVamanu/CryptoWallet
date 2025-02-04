@@ -23,25 +23,29 @@ export function useAccountManager() {
     
     const userValidation = await validateUser(credentials.username, credentials.password);
     if ('error' in userValidation) {
-      setLoginError(userValidation.error || ''); // Add empty string fallback
+      setLoginError(userValidation.error || '');
       return;
     }
 
     const accountsResult = await loadUserAccount(credentials.username);
     if ('error' in accountsResult) {
-      setLoginError(accountsResult.error || ''); // Add empty string fallback
+      setLoginError(accountsResult.error || '');
       return;
     }
 
     try {
       const firstAccount = accountsResult.accounts[0];
-      const privateKey = await decryptAccountData(firstAccount.encryptedData);
+      const privateKey = await decryptAccountData(
+        firstAccount.encryptedData,
+        credentials.password
+      );
       const accountData = await generateAccount(privateKey);
       
       setAccount(accountData);
       setIsLoggedIn(true);
       setLoginError('');
     } catch (error) {
+      console.error('Login error:', error);
       setLoginError('Failed to load account');
     }
   }, [credentials]);
