@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   fontWeight: '500',
                   letterSpacing: '0.5px'
                 }}>
-                  Made with ❤️ by Zorbu
+                  Made by MVamanu
                 </p>
               </div>
             </div>
