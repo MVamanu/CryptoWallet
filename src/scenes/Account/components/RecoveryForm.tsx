@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ValidationUtils } from '../../../utils/ValidationUtils';
 
 interface RecoveryFormProps {
   seedphrase: string;
@@ -13,13 +14,32 @@ export const RecoveryForm: React.FC<RecoveryFormProps> = ({
   onSubmit,
   onCancel
 }) => {
+  const [error, setError] = useState<string>('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validare cu limitare de timp
+    const startTime = Date.now();
+    if (!ValidationUtils.seedPhrase(seedphrase)) {
+      setError('Invalid recovery phrase format');
+      return;
+    }
+    // Verifică timpul de execuție
+    if (Date.now() - startTime > 100) {
+      console.warn('Validation took too long');
+    }
+
     onSubmit(seedphrase);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
+    const value = e.target.value;
+    // Limitează lungimea input-ului
+    if (value.length <= 1000) {
+      onChange(value);
+      setError('');
+    }
   };
 
   return (
@@ -34,9 +54,15 @@ export const RecoveryForm: React.FC<RecoveryFormProps> = ({
             id="seedphrase"
             value={seedphrase}
             onChange={handleChange}
-            placeholder="Enter your recovery phrase"
+            placeholder="Enter your 12-word recovery phrase"
+            maxLength={1000}
             required
           />
+          {error && (
+            <div className="text-danger mt-1">
+              <small>{error}</small>
+            </div>
+          )}
         </div>
         <div className="d-grid gap-2">
           <button type="submit" className="btn btn-primary">
