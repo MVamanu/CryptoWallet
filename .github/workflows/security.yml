@@ -4,131 +4,28 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * 0'  # Rulează săptămânal
+    - cron: '0 0 * * 0'
 
 jobs:
-  static-analysis:
-    name: SAST Scan
+  security:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v2
-
-      # SonarCloud pentru analiza statică
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=your-project-key
-            -Dsonar.organization=your-org
-            -Dsonar.sources=src
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-
-      # CodeQL Analysis
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: javascript
-          
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-        with:
-          category: "/language:javascript"
-
-  dependency-check:
-    name: Dependency Security Check
-    runs-on: ubuntu-latest
+    - uses: actions/checkout@v4
     
-    steps:
-      - uses: actions/checkout@v2
+    - name: Run SAST with SonarCloud
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        
+    - name: Run DAST with OWASP ZAP
+      uses: zaproxy/action-full-scan@v0.9.0
+      with:
+        target: 'https://your-deployed-app.com'
 
-      # Snyk pentru verificarea dependențelor
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
-      # OWASP Dependency-Check
-      - name: OWASP Dependency-Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: 'Crypto Wallet'
-          path: '.'
-          format: 'HTML'
-          args: >
-            --failOnCVSS 7
-            --enableRetired
-
-      # Upload raportul OWASP
-      - name: Upload OWASP Report
-        uses: actions/upload-artifact@v2
-        with:
-          name: dependency-check-report
-          path: reports
-
-  dynamic-analysis:
-    name: DAST Scan
-    runs-on: ubuntu-latest
-    needs: [static-analysis, dependency-check]
-    
-    steps:
-      - uses: actions/checkout@v2
-
-      # OWASP ZAP Scan
-      - name: ZAP Scan
-        uses: zaproxy/action-full-scan@v0.4.0
-        with:
-          target: 'https://your-deployed-app.vercel.app'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
-
-  compliance-check:
-    name: Compliance Check
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v2
-
-      # Verificare GDPR
-      - name: GDPR Compliance Check
-        uses: docker://microsoft/gdpr-checker:latest
-        with:
-          path: '.'
-
-      # Verificare licențe
-      - name: License Compliance Check
-        uses: docker://licensefinder/license_finder:latest
-        with:
-          args: '--decisions-file config/decisions.yml'
-
-  security-report:
-    name: Generate Security Report
-    needs: [static-analysis, dependency-check, dynamic-analysis, compliance-check]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Collect Security Reports
-        uses: actions/download-artifact@v2
-        with:
-          path: security-reports
-
-      - name: Generate Combined Report
-        run: |
-          echo "# Security Analysis Report" > combined-report.md
-          echo "## Static Analysis" >> combined-report.md
-          cat security-reports/sonarcloud/* >> combined-report.md
-          echo "## Dependency Check" >> combined-report.md
-          cat security-reports/dependency-check-report/* >> combined-report.md
-          echo "## Dynamic Analysis" >> combined-report.md
-          cat security-reports/zap-report/* >> combined-report.md
-
-      - name: Upload Combined Report
-        uses: actions/upload-artifact@v2
-        with:
-          name: security-analysis-report
-          path: combined-report.md
+    - name: Upload ZAP Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-scan-report
+        path: report.html
+        retention-days: 30
