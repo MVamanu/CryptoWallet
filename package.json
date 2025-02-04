@@ -63,6 +63,16 @@
         "lines": 30,
         "statements": 30
       }
+    },
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx)$": "ts-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(axios)/)"
+    ],
+    "moduleNameMapper": {
+      "^axios$": "axios/dist/axios.js"
     }
-  }
+  },
+  "type": "module"
 }
