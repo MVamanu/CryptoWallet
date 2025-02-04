@@ -1,28 +1,31 @@
 import { ethers } from 'ethers';
+import { AES, enc } from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, StoredAccount } from '../models/Account';
 
 const USERS_STORE_KEY = 'users';
 const ACCOUNTS_STORE_KEY = 'accountsStore';
 
-export const generateAccount = async (privateKey?: string): Promise<Account> => {
-  const wallet = privateKey 
-    ? new ethers.Wallet(privateKey)
+export const generateAccount = async (existingPrivateKey?: string) => {
+  const wallet = existingPrivateKey 
+    ? new ethers.Wallet(existingPrivateKey)
     : ethers.Wallet.createRandom();
-
+    
   return {
+    privateKey: wallet.privateKey,
     address: wallet.address,
-    balance: '0',
-    privateKey: wallet.privateKey
+    balance: '0'
   };
 };
 
 export const hashPassword = async (password: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // In a real app, use a proper password hashing library like bcrypt
+  return enc.Base64.stringify(enc.Utf8.parse(password));
+};
+
+export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+  const hashedInput = await hashPassword(password);
+  return hashedInput === hash;
 };
 
 export const validateUser = async (username: string, password: string) => {
@@ -63,23 +66,21 @@ export const loadUserAccount = async (username: string) => {
   return { success: true, accounts: userAccounts };
 };
 
-export const decryptAccountData = async (encryptedData: string): Promise<string> => {
-  try {
-    const decoded = atob(encryptedData);
-    const [privateKey] = decoded.split(':');
-    return privateKey;
-  } catch (error) {
-    console.error('Decryption error:', error);
-    throw new Error('Failed to decrypt account data');
-  }
+export const encryptAccountData = async (data: string, password: string): Promise<string> => {
+  return AES.encrypt(data, password).toString();
 };
 
-export const encryptAccountData = async (privateKey: string, password: string): Promise<string> => {
+export const decryptAccountData = async (encryptedData: string, password: string): Promise<string> => {
   try {
-    return btoa(privateKey + ':' + password);
+    const bytes = AES.decrypt(encryptedData, password);
+    const decrypted = bytes.toString(enc.Utf8);
+    if (!decrypted) {
+      throw new Error('Failed to decrypt data');
+    }
+    return decrypted;
   } catch (error) {
-    console.error('Encryption error:', error);
-    throw new Error('Failed to encrypt account data');
+    console.error('Decryption error:', error);
+    throw new Error('Failed to decrypt account data. Please check your password.');
   }
 };
 

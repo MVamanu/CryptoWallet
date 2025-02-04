@@ -48,11 +48,10 @@ function AccountCreate() {
   const handleCreateAccount = async (newCredentials: UserCredentials) => {
     try {
       // Generate new account
-      const newAccount = await generateAccount();
+      const newAccount = await generateAccount(seedphrase);
       
       // Hash password
       const passwordHash = await hashPassword(newCredentials.password);
-      
       // Encrypt private key
       const encryptedData = await encryptAccountData(newAccount.privateKey, newCredentials.password);
       
