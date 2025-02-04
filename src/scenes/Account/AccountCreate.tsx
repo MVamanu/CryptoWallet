@@ -5,10 +5,11 @@ import Layout from '../../components/Layout/Layout';
 import { LoginForm } from './components/LoginForm';
 // import { RecoveryForm } from './components/RecoveryForm';
 // import { CreateAccountForm } from './components/CreateAccountForm';
-import { useAccountManager } from './hooks/useAccountManager';
-import { generateAccount } from '../../utils/AccountUtils';
+import { useAccountManager } from '../../hooks/useAccountManager';
+import { generateAccount, hashPassword, encryptAccountData } from '../../utils/AccountUtils';
 import { CreateAccountForm } from './components/CreateAccountForm';
 import { RecoveryForm } from './components/RecoveryForm';
+import { v4 as uuidv4 } from 'uuid';
 
 function AccountCreate() {
   const {
@@ -18,7 +19,10 @@ function AccountCreate() {
     loginError,
     handleLogin,
     handleLogout,
-    handleCredentialsChange
+    handleCredentialsChange,
+    setAccount,
+    setCredentials,
+    setIsLoggedIn
   } = useAccountManager();
 
   const [showRecoverInput, setShowRecoverInput] = useState(false);
@@ -40,6 +44,52 @@ function AccountCreate() {
   };
 
   const showInitialButtons = !isLoggedIn && !showCreateCredentials && !showLoginForm;
+
+  const handleCreateAccount = async (newCredentials: UserCredentials) => {
+    try {
+      // Generate new account
+      const newAccount = await generateAccount();
+      
+      // Hash password
+      const passwordHash = await hashPassword(newCredentials.password);
+      
+      // Encrypt private key
+      const encryptedData = await encryptAccountData(newAccount.privateKey, newCredentials.password);
+      
+      // Create stored account object
+      const storedAccount: StoredAccount = {
+        id: uuidv4(),
+        name: `Account ${newCredentials.username}`,
+        address: newAccount.address,
+        encryptedData,
+        username: newCredentials.username
+      };
+      
+      // Save user data
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      users.push({
+        username: newCredentials.username,
+        passwordHash,
+        accountIds: [storedAccount.id]
+      });
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Save account data
+      const accountsStore = JSON.parse(localStorage.getItem('accountsStore') || '{"accounts":[]}');
+      accountsStore.accounts.push(storedAccount);
+      localStorage.setItem('accountsStore', JSON.stringify(accountsStore));
+      
+      // Update state
+      setAccount(newAccount);
+      setCredentials(newCredentials);
+      setIsLoggedIn(true);
+      setShowCreateCredentials(false);
+      
+    } catch (error) {
+      console.error('Failed to create account:', error);
+      // Handle error appropriately
+    }
+  };
 
   return (
     <Layout>
@@ -90,7 +140,7 @@ function AccountCreate() {
 
       {showCreateCredentials && (
         <CreateAccountForm
-          onSubmit={handleCredentialsChange}
+          onSubmit={handleCreateAccount}
           onCancel={() => setShowCreateCredentials(false)}
         />
       )}

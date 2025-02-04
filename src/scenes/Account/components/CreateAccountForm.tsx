@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserCredentials } from '../../../models/Account';
 
 interface CreateAccountFormProps {
-  onSubmit: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (credentials: UserCredentials) => void;
   onCancel: () => void;
 }
 
@@ -35,7 +35,11 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
       setError('Passwords do not match');
       return;
     }
-    onSubmit(credentials as any);
+    if (credentials.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    onSubmit(credentials);
   };
 
   return (
@@ -57,6 +61,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             value={credentials.username}
             onChange={handleChange}
             required
+            minLength={3}
           />
         </div>
         <div className="mb-3">
@@ -69,6 +74,7 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
             value={credentials.password}
             onChange={handleChange}
             required
+            minLength={6}
           />
         </div>
         <div className="mb-3">
